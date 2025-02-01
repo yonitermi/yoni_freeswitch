@@ -21,10 +21,10 @@ pipeline {
                             
                             terraform init -input=false
                             
-                            # Apply each dependency separately
-                            terraform apply -auto-approve eip_freeswitch.tf
-                            terraform apply -auto-approve security_group.tf
-                            terraform apply -auto-approve ssh_key.tf
+                            # Apply only dependencies (Terraform automatically loads all .tf files)
+                            terraform apply -auto-approve -target=aws_eip.freeswitch_eip
+                            terraform apply -auto-approve -target=aws_security_group.freeswitch_sg
+                            terraform apply -auto-approve -target=aws_key_pair.freeswitch_key
                             '''
                         }
                     }
