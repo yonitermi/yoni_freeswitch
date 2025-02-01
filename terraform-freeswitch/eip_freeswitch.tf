@@ -1,6 +1,7 @@
-resource "aws_eip" "freeswitch_eip" {
-  domain   = "vpc"
+resource "aws_eip" "freeswitch" {
+  domain = "vpc"
+
   tags = {
-    Name = "FreeSWITCH-Static-IP"
+    Name = "freeswitch_EIP"
   }
 }

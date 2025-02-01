@@ -1,8 +1,7 @@
-resource "aws_security_group" "freeswitch_sg" {
-  name        = var.security_group_name
-  description = "Security group for FreeSWITCH and FusionPBX"
-  vpc_id      = var.vpc_id
-
+resource "aws_security_group" "voip_server" {
+  name        = "VOIP-server-ports"
+  description = "Security group for VOIP server allowing SIP, RTP, HTTP, HTTPS, and SSH"
+  
   # Allow SIP (5060/5061) - VoIP
   ingress {
     from_port   = 5060
@@ -41,5 +40,9 @@ resource "aws_security_group" "freeswitch_sg" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "VOIP-SG"
   }
 }
