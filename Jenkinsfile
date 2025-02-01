@@ -10,10 +10,12 @@ pipeline {
     stages {
         stage('Apply Dependencies (SG, Key Pair, EIP)') {
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
-                                  credentialsId: 'yytermi_aws', 
-                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
-                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'yytermi_aws',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
                     script {
                         dir('terraform-freeswitch') {  
                             sh '''
@@ -57,10 +59,12 @@ pipeline {
 
         stage('Create EC2 Instance and Attach Dependencies') {
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
-                                  credentialsId: 'yytermi_aws', 
-                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
-                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'yytermi_aws',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
                     script {
                         dir('terraform-freeswitch') {  
                             sh '''

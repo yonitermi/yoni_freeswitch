@@ -3,7 +3,7 @@ variable "key_pair_name" {}
 variable "eip_allocation_id" {}
 
 resource "aws_instance" "freeswitch" {
-  ami             = "ami-0c55b159cbfafe1f0"  # Latest Ubuntu AMI (modify as needed)
+  ami             = "ami-0c55b159cbfafe1f0"  # Ubuntu AMI (adjust as needed)
   instance_type   = "t3.medium"
   key_name        = var.key_pair_name
   security_groups = [var.security_group_id]
