@@ -1,15 +1,24 @@
+variable "security_group_id" {}
+variable "key_pair_name" {}
+variable "eip_allocation_id" {}
+
 resource "aws_instance" "freeswitch" {
-  ami                    = "ami-0c55b159cbfafe1f0"  # Choose a valid AMI
-  instance_type          = "t3.medium"
-  key_name               = var.key_name  # Use key pair output
-  vpc_security_group_ids = [var.security_group_id]  # Use SG output
+  ami             = "ami-0c55b159cbfafe1f0"  # Latest Ubuntu AMI (modify as needed)
+  instance_type   = "t3.medium"
+  key_name        = var.key_pair_name
+  security_groups = [var.security_group_id]
+
+  root_block_device {
+    volume_size = 20
+  }
 
   tags = {
-    Name = "FreeSWITCH-Server"
+    Name = "freeswitch-server"
   }
 }
 
-resource "aws_eip_association" "eip_assoc" {
+# Attach Elastic IP
+resource "aws_eip_association" "freeswitch_eip_attach" {
   instance_id   = aws_instance.freeswitch.id
-  allocation_id = var.eip_id  # Use allocated EIP from previous stage
+  allocation_id = var.eip_allocation_id
 }

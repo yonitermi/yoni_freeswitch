@@ -1,14 +1,11 @@
-output "instance_id" {
-  description = "ID of the FreeSWITCH EC2 instance"
-  value       = aws_instance.freeswitch.id
+output "security_group_id" {
+  value = aws_security_group.voip_server.id
 }
 
-output "instance_public_ip" {
-  description = "Public IP assigned to the instance"
-  value       = aws_eip.freeswitch_eip.public_ip
+output "key_pair_name" {
+  value = aws_key_pair.freeswitch.key_name
 }
 
-output "instance_private_ip" {
-  description = "Private IP of the instance"
-  value       = aws_instance.freeswitch.private_ip
+output "eip_allocation_id" {
+  value = aws_eip.freeswitch.id
 }
