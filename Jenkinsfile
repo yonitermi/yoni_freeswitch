@@ -2,34 +2,19 @@ pipeline {
     agent any
 
     stages {
-        stage('Apply Dependencies (SG, Key Pair, EIP)') {
+        stage('Fetch Existing Terraform Outputs') {
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'yytermi_aws',
-                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ]]) {
-                    script {
-                        dir('terraform-freeswitch') {  
-                            sh '''
-                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                            export TF_IN_AUTOMATION=true
-
-                            terraform init -input=false
-
-                            # Apply dependencies
-                            terraform apply -auto-approve -target=aws_eip.freeswitch
-                            terraform apply -auto-approve -target=aws_security_group.voip_server
-                            terraform apply -auto-approve -target=aws_key_pair.freeswitch
-
-                            # Capture Terraform outputs and save to files
-                            terraform output -raw security_group_id > security_group_id.txt
-                            terraform output -raw key_pair_name > key_pair_name.txt
-                            terraform output -raw eip_allocation_id > eip_allocation_id.txt
-                            '''
-                        }
+                script {
+                    dir('terraform-freeswitch') {  
+                        sh '''
+                        # Initialize Terraform (ensures state file is available)
+                        terraform init -input=false
+                        
+                        # Fetch Terraform outputs from the state file
+                        terraform output -raw security_group_id > security_group_id.txt
+                        terraform output -raw key_pair_name > key_pair_name.txt
+                        terraform output -raw eip_allocation_id > eip_allocation_id.txt
+                        '''
                     }
                 }
             }
@@ -66,7 +51,7 @@ pipeline {
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                             export TF_IN_AUTOMATION=true
 
-                            # Read variables from environment
+                            # Read variables from output files
                             SECURITY_GROUP_ID=\$(cat security_group_id.txt)
                             KEY_PAIR_NAME=\$(cat key_pair_name.txt)
                             EIP_ALLOCATION_ID=\$(cat eip_allocation_id.txt)
