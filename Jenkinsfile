@@ -19,7 +19,7 @@ pipeline {
 
                             terraform init -input=false
 
-                            # Apply dependencies (Security Group, Key Pair, EIP)
+                            # Apply dependencies
                             terraform apply -auto-approve -target=aws_eip.freeswitch
                             terraform apply -auto-approve -target=aws_security_group.voip_server
                             terraform apply -auto-approve -target=aws_key_pair.freeswitch
@@ -67,17 +67,17 @@ pipeline {
                             export TF_IN_AUTOMATION=true
 
                             # Read variables from environment
-                            export SECURITY_GROUP_ID=${SECURITY_GROUP_ID}
-                            export KEY_PAIR_NAME=${KEY_PAIR_NAME}
-                            export EIP_ALLOCATION_ID=${EIP_ALLOCATION_ID}
+                            SECURITY_GROUP_ID=\$(cat security_group_id.txt)
+                            KEY_PAIR_NAME=\$(cat key_pair_name.txt)
+                            EIP_ALLOCATION_ID=\$(cat eip_allocation_id.txt)
 
-                            echo "Creating EC2 with Security Group: $SECURITY_GROUP_ID, Key Pair: $KEY_PAIR_NAME, EIP: $EIP_ALLOCATION_ID"
+                            echo "Creating EC2 with Security Group: \$SECURITY_GROUP_ID, Key Pair: \$KEY_PAIR_NAME, EIP: \$EIP_ALLOCATION_ID"
 
                             # Apply Terraform with dynamically loaded variables
                             terraform apply -auto-approve \
-                                -var="security_group_id=$SECURITY_GROUP_ID" \
-                                -var="key_pair_name=$KEY_PAIR_NAME" \
-                                -var="eip_allocation_id=$EIP_ALLOCATION_ID"
+                                -var="security_group_id=\$SECURITY_GROUP_ID" \
+                                -var="key_pair_name=\$KEY_PAIR_NAME" \
+                                -var="eip_allocation_id=\$EIP_ALLOCATION_ID"
                             """
                         }
                     }
