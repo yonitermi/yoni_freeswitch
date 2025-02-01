@@ -13,7 +13,7 @@ pipeline {
                                   accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
                                   secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                     script {
-                        dir('terraform-freeswitch') {  // Explicitly set Terraform directory
+                        dir('terraform-freeswitch') {  // Ensure correct Terraform directory
                             sh '''
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -21,38 +21,8 @@ pipeline {
                             
                             terraform init -input=false
                             
-                            # Apply only the dependencies
-                            terraform apply -target=aws_security_group.freeswitch_sg \
-                                            -target=aws_key_pair.freeswitch_key \
-                                            -target=aws_eip.freeswitch_eip \
-                                            -auto-approve
-                            '''
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Apply Instance with Dependencies') {
-            steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
-                                  credentialsId: 'yytermi_aws', 
-                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
-                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                    script {
-                        dir('terraform-freeswitch') {
-                            sh '''
-                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                            export TF_IN_AUTOMATION=true
-                            
-                            # Apply the instance after dependencies are created
-                            terraform apply -target=aws_instance.freeswitch \
-                                            -target=aws_eip_association.eip_assoc \
-                                            -var "security_group_id=$(terraform output -raw security_group_id)" \
-                                            -var "key_name=$(terraform output -raw key_name)" \
-                                            -var "eip_id=$(terraform output -raw eip_id)" \
-                                            -auto-approve
+                            # Apply only specific Terraform files
+                            terraform apply -auto-approve security_group.tf ssh_key.tf eip_freeswitch.tf
                             '''
                         }
                     }
