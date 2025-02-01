@@ -2,26 +2,28 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = "us-east-1"  // AWS Region
+        TF_VAR_security_group_id = ''
+        TF_VAR_key_pair_name = ''
+        TF_VAR_eip_allocation_id = ''
     }
 
     stages {
         stage('Apply Dependencies (SG, Key Pair, EIP)') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
-                                credentialsId: 'yytermi_aws', 
-                                accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
-                                secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]]) {
+                                  credentialsId: 'yytermi_aws', 
+                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
+                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]]) {
                     script {
                         dir('terraform-freeswitch') {  
                             sh '''
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                             export TF_IN_AUTOMATION=true
-                            
+
                             terraform init -input=false
-                            
-                            # Apply dependencies (Security Group, Key Pair, Elastic IP)
+
+                            # Apply dependencies
                             terraform apply -auto-approve -target=aws_eip.freeswitch
                             terraform apply -auto-approve -target=aws_security_group.voip_server
                             terraform apply -auto-approve -target=aws_key_pair.freeswitch
@@ -37,32 +39,40 @@ pipeline {
             }
         }
 
+        stage('Read Outputs and Set Environment Variables') {
+            steps {
+                script {
+                    dir('terraform-freeswitch') {  
+                        TF_VAR_security_group_id = sh(script: 'cat security_group_id.txt', returnStdout: true).trim()
+                        TF_VAR_key_pair_name = sh(script: 'cat key_pair_name.txt', returnStdout: true).trim()
+                        TF_VAR_eip_allocation_id = sh(script: 'cat eip_allocation_id.txt', returnStdout: true).trim()
+
+                        echo "Security Group ID: ${TF_VAR_security_group_id}"
+                        echo "Key Pair Name: ${TF_VAR_key_pair_name}"
+                        echo "EIP Allocation ID: ${TF_VAR_eip_allocation_id}"
+                    }
+                }
+            }
+        }
+
         stage('Create EC2 Instance and Attach Dependencies') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
-                                credentialsId: 'yytermi_aws', 
-                                accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
-                                secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]]) {
+                                  credentialsId: 'yytermi_aws', 
+                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
+                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]]) {
                     script {
                         dir('terraform-freeswitch') {  
                             sh '''
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                             export TF_IN_AUTOMATION=true
-                            
-                            # Read Terraform outputs dynamically
-                            SECURITY_GROUP_ID=$(cat security_group_id.txt)
-                            KEY_PAIR_NAME=$(cat key_pair_name.txt)
-                            EIP_ALLOCATION_ID=$(cat eip_allocation_id.txt)
-
-                            echo "Using Security Group: $SECURITY_GROUP_ID"
-                            echo "Using Key Pair: $KEY_PAIR_NAME"
-                            echo "Using EIP Allocation: $EIP_ALLOCATION_ID"
 
                             # Run Terraform apply with dynamic values
-                            terraform apply -auto-approve -var="security_group_id=$SECURITY_GROUP_ID" \
-                                                            -var="key_pair_name=$KEY_PAIR_NAME" \
-                                                            -var="eip_allocation_id=$EIP_ALLOCATION_ID"
+                            terraform apply -auto-approve \
+                                -var="security_group_id=${TF_VAR_security_group_id}" \
+                                -var="key_pair_name=${TF_VAR_key_pair_name}" \
+                                -var="eip_allocation_id=${TF_VAR_eip_allocation_id}"
                             '''
                         }
                     }
@@ -70,13 +80,4 @@ pipeline {
             }
         }
     }
-
-
-
-    post {
-        always {
-            archiveArtifacts artifacts: '**/*.tf', fingerprint: true
-        }
-    }
 }
-   
